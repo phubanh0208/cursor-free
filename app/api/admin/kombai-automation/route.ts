@@ -180,6 +180,8 @@ async function handlePost(req: AuthenticatedRequest) {
     addLog('🌐 Launching browser...');
     const browser = await chromium.launch({
       headless: true,
+      // Use system Chromium in Docker (Alpine Linux)
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
     });
 
     // Create new context with no storage (incognito mode)

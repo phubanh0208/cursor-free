@@ -26,6 +26,9 @@ importers:
       next:
         specifier: 14.1.0
         version: 14.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      playwright:
+        specifier: ^1.40.0
+        version: 1.56.1
       react:
         specifier: ^18
         version: 18.3.1
@@ -57,9 +60,6 @@ importers:
       eslint-config-next:
         specifier: 14.1.0
         version: 14.1.0(eslint@8.57.1)(typescript@5.9.3)
-      playwright:
-        specifier: ^1.40.0
-        version: 1.56.1
       postcss:
         specifier: ^8
         version: 8.5.6

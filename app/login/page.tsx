@@ -161,13 +161,6 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
-
-        {/* Note */}
-        <div className="mt-6 text-center text-sm text-gray-400">
-          <p>Demo accounts:</p>
-          <p className="mt-1">Admin: admin@cursor.vip / admin123</p>
-          <p>Customer: customer@cursor.vip / customer123</p>
-        </div>
       </div>
     </main>
   );
