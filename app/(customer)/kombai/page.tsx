@@ -629,7 +629,7 @@ export default function CustomerKombaiAutomationPage() {
                       <li>1. Nếu đã login, click <strong>Sign Out</strong></li>
                       <li>2. Click <strong>Sign Up</strong></li>
                       <li>3. Copy URL từ address bar</li>
-                      <li>4. Paste vào ô "Signup URL"</li>
+                      <li>4. Paste vào ô &quot;Signup URL&quot;</li>
                     </ol>
                     <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-3 mt-3">
                       <p className="text-gray-400 text-sm">

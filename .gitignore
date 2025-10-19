@@ -26,6 +26,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -34,4 +35,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/public/screenshots
+# playwright
+test-results/
+playwright-report/
+playwright/.cache/
+.cache/
+
+# screenshots (keep directory, ignore contents)
+public/screenshots/*
+!public/screenshots/.gitkeep
+
+# Docker volumes
+mongodb_data/
+mongodb_config/

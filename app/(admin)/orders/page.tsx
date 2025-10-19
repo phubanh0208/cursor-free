@@ -78,7 +78,7 @@ export default function OrdersPage() {
       const response = await fetch('/api/admin/tokens');
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
-      const uniqueCategories = [...new Set(data.tokens.map((t: any) => t.category))];
+      const uniqueCategories = Array.from(new Set(data.tokens.map((t: any) => t.category)));
       setCategories(uniqueCategories as string[]);
     } catch (error) {
       console.error('Error fetching categories:', error);
