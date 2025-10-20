@@ -139,8 +139,8 @@ async function handlePost(req: AuthenticatedRequest) {
     // Save file
     fs.writeFileSync(filepath, screenshot);
     
-    // Return public URL
-    const publicUrl = `/screenshots/${filename}`;
+    // Return API URL (served via API endpoint, not static public folder)
+    const publicUrl = `/api/screenshots/${filename}`;
     screenshots.push(publicUrl);
     return publicUrl;
   };

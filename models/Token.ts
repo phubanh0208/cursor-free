@@ -30,7 +30,6 @@ const TokenSchema = new Schema<IToken>(
     token: {
       type: String,
       required: false,
-      sparse: true, // Allows multiple documents with empty/null token
       trim: true,
       default: '',
     },

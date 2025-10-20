@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node scripts/create-admin.js",
-    "kombai-signup": "node scripts/kombai-auto-signup.js"
+    "kombai-signup": "node scripts/kombai-auto-signup.js",
+    "drop-token-index": "node scripts/drop-token-index.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
