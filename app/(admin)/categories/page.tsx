@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/ToastContainer';
 import { 
   FolderTree,
@@ -90,14 +89,12 @@ export default function CategoriesPage() {
   const totalRevenue = stats.reduce((sum, s) => sum + s.totalRevenue, 0);
 
   return (
-    <div className="flex min-h-screen">
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8 flex items-center gap-3">
-            <FolderTree className="w-10 h-10" />
-            Quản lý Categories
-          </h1>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-white mb-8 flex items-center gap-3">
+          <FolderTree className="w-10 h-10" />
+          Quản lý Categories
+        </h1>
 
           {/* Overall Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -213,8 +210,7 @@ export default function CategoriesPage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
 

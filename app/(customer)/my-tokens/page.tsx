@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/ToastContainer';
 import { 
   Package, 
@@ -130,21 +129,18 @@ export default function MyTokensPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
-              <Package className="w-10 h-10" />
-              Token của tôi
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Quản lý và xem thông tin các token đã mua
-            </p>
-          </div>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
+            <Package className="w-10 h-10" />
+            Token của tôi
+          </h1>
+          <p className="text-gray-300 text-lg">
+            Quản lý và xem thông tin các token đã mua
+          </p>
+        </div>
 
           {/* Tokens List */}
           {tokens.length === 0 ? (
@@ -404,8 +400,7 @@ export default function MyTokensPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
 

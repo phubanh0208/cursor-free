@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Token from '@/models/Token';
+import User from '@/models/User';
 import { requireAuth, AuthenticatedRequest } from '@/lib/middleware';
 
 // POST: Customer mua token
@@ -9,13 +10,22 @@ async function handlePurchase(req: AuthenticatedRequest) {
     await connectDB();
     
     const { tokenId } = await req.json();
-    const user = req.user!;
+    const sessionUser = req.user!;
     
     // Chỉ customer mới được mua
-    if (user.role !== 'customer') {
+    if (sessionUser.role !== 'customer') {
       return NextResponse.json(
         { error: 'Only customers can purchase tokens' },
         { status: 403 }
+      );
+    }
+    
+    // Lấy thông tin user từ database
+    const user = await User.findById(sessionUser.userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
     
@@ -32,14 +42,26 @@ async function handlePurchase(req: AuthenticatedRequest) {
     // Kiểm tra token còn available không
     if (token.is_taken || token.customerId) {
       return NextResponse.json(
-        { error: 'Token already purchased' },
+        { error: 'Token đã được mua rồi' },
         { status: 400 }
       );
     }
     
+    // Kiểm tra credit
+    if (user.credits < token.value) {
+      return NextResponse.json(
+        { error: `Không đủ credit! Bạn cần ${token.value} credit nhưng chỉ có ${user.credits} credit` },
+        { status: 400 }
+      );
+    }
+    
+    // Trừ credit của user
+    user.credits -= token.value;
+    await user.save();
+    
     // Cập nhật token
     token.is_taken = true;
-    token.customerId = user.userId;
+    token.customerId = user._id;
     token.purchaseDate = new Date();
     await token.save();
     
@@ -50,7 +72,8 @@ async function handlePurchase(req: AuthenticatedRequest) {
         id: token._id,
         value: token.value,
         purchaseDate: token.purchaseDate
-      }
+      },
+      remainingCredits: user.credits
     });
   } catch (error: any) {
     return NextResponse.json(

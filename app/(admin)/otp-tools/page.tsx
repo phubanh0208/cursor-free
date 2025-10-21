@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Loader, Copy, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { useToast } from '@/components/ToastContainer';
-import Sidebar from '@/components/Sidebar';
 
 interface OTPResponse {
   email: string;
@@ -170,9 +169,8 @@ export default function OTPCheckPage() {
   }
 
   return (
-    <div className="flex min-h-screen">      
-      <main className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-2xl">
+    <div className="flex items-center justify-center p-8 min-h-screen">
+      <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 mb-4">
@@ -334,8 +332,7 @@ export default function OTPCheckPage() {
           </div>
         )}
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
 

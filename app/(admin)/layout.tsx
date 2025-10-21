@@ -61,7 +61,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen">
       <Sidebar userRole="admin" username={user.username} />
-      <main className="flex-1">
+      <main className="flex-1 min-w-0 overflow-x-auto">
         {children}
       </main>
     </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/ToastContainer';
 import { Mail, Lock, Loader, Code, Copy, CheckCircle, AlertCircle, Play, Shuffle, ExternalLink } from 'lucide-react';
 
@@ -165,19 +164,16 @@ export default function KombaiAutomationPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-              <Code className="w-10 h-10" />
-              Kombai Automation
-            </h1>
-            <p className="text-gray-400">Tự động đăng ký tài khoản Kombai và lấy auth code</p>
-          </div>
+    <div className="p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
+            <Code className="w-10 h-10" />
+            Kombai Automation
+          </h1>
+          <p className="text-gray-400">Tự động đăng ký tài khoản Kombai và lấy auth code</p>
+        </div>
 
           {/* Form */}
           <div className="glass-card rounded-2xl shadow-2xl p-8 mb-8">
@@ -487,8 +483,7 @@ export default function KombaiAutomationPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
 

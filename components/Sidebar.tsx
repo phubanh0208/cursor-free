@@ -12,7 +12,8 @@ import {
   ShoppingCart,
   Mail,
   Code,
-  Coins
+  Coins,
+  BookOpen
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -39,6 +40,7 @@ export default function Sidebar({ userRole, username, credits = 0 }: SidebarProp
   const adminLinks = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Quản lý Token' },
     { href: '/categories', icon: FolderTree, label: 'Quản lý Category' },
+    { href: '/category-guides', icon: BookOpen, label: 'Quản lý Hướng dẫn' },
     { href: '/orders', icon: ShoppingCart, label: 'Quản lý Đơn hàng' },
     { href: '/credits', icon: Coins, label: 'Quản lý Credits' },
     { href: '/otp-tools', icon: Mail, label: 'Lấy OTP Email' },
@@ -55,7 +57,7 @@ export default function Sidebar({ userRole, username, credits = 0 }: SidebarProp
   const links = userRole === 'admin' ? adminLinks : customerLinks;
 
   return (
-    <aside className="w-64 min-h-screen glass-card border-r border-white/10 flex flex-col">
+    <aside className="w-64 flex-shrink-0 min-h-screen glass-card border-r border-white/10 flex flex-col">
       {/* Logo & Brand */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3 mb-2">

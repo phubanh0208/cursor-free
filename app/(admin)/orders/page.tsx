@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/ToastContainer';
 import { 
   ShoppingCart,
@@ -124,15 +123,12 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8 flex items-center gap-3">
-            <ShoppingCart className="w-10 h-10" />
-            Quản lý Đơn hàng
-          </h1>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-white mb-8 flex items-center gap-3">
+          <ShoppingCart className="w-10 h-10" />
+          Quản lý Đơn hàng
+        </h1>
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -288,8 +284,7 @@ export default function OrdersPage() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
 

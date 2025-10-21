@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import { useToast } from '@/components/ToastContainer';
 import { 
   Plus, 
@@ -299,12 +298,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      
-      
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold text-white mb-8">Quản lý Token</h1>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-white mb-8">Quản lý Token</h1>
 
           {/* Form */}
           <div className="glass-card rounded-2xl shadow-2xl p-8 mb-8">
@@ -507,7 +503,9 @@ export default function AdminDashboard() {
                       <>
                         <tr key={token._id} className="glass-hover">
                           <td className="px-6 py-4 text-sm text-gray-300">
-                            <div className="font-semibold text-white">{token.name}</div>
+                            <div className="font-semibold text-white max-w-[200px] truncate" title={token.name}>
+                              {token.name}
+                            </div>
                             {token.token && (
                               <div className="text-xs text-gray-500 max-w-[150px] truncate" title={token.token}>
                                 {token.token}
@@ -519,7 +517,11 @@ export default function AdminDashboard() {
                               {token.category}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{token.email || 'N/A'}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">
+                            <div className="max-w-[180px] truncate" title={token.email || 'N/A'}>
+                              {token.email || 'N/A'}
+                            </div>
+                          </td>
                           <td className="px-6 py-4 text-sm text-gray-300">${token.value}</td>
                           <td className="px-6 py-4 text-sm text-gray-300">{token.expiry_days} ngày</td>
                           <td className="px-6 py-4 text-sm">
@@ -697,7 +699,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
