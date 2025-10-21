@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: phubanh0208/cursor-free:latest
     container_name: cursor-token-app
     restart: unless-stopped
     ports:
@@ -20,6 +21,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       # Webhook URL
       WEBHOOK_BASE_URL: ${WEBHOOK_BASE_URL}
+      # SePay API Key
+      SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID}
+      SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY}
+      SEPAY_ENV: ${SEPAY_ENV}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     volumes:
       # Mount screenshots directory for debugging
       - ./public/screenshots:/app/public/screenshots

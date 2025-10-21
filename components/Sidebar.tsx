@@ -13,7 +13,9 @@ import {
   Mail,
   Code,
   Coins,
-  BookOpen
+  BookOpen,
+  Wallet,
+  Receipt
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -41,7 +43,7 @@ export default function Sidebar({ userRole, username, credits = 0 }: SidebarProp
     { href: '/dashboard', icon: LayoutDashboard, label: 'Quản lý Token' },
     { href: '/categories', icon: FolderTree, label: 'Quản lý Category' },
     { href: '/category-guides', icon: BookOpen, label: 'Quản lý Hướng dẫn' },
-    { href: '/orders', icon: ShoppingCart, label: 'Quản lý Đơn hàng' },
+    { href: '/orders-manage', icon: ShoppingCart, label: 'Quản lý Đơn hàng' },
     { href: '/credits', icon: Coins, label: 'Quản lý Credits' },
     { href: '/otp-tools', icon: Mail, label: 'Lấy OTP Email' },
     { href: '/kombai-automation', icon: Code, label: 'Kombai Automation' },
@@ -49,6 +51,8 @@ export default function Sidebar({ userRole, username, credits = 0 }: SidebarProp
 
   const customerLinks = [
     { href: '/shop', icon: ShoppingBag, label: 'Cửa hàng' },
+    { href: '/deposit', icon: Wallet, label: 'Nạp Credit' },
+    { href: '/orders', icon: Receipt, label: 'Lịch sử giao dịch' },
     { href: '/my-tokens', icon: Package, label: 'Token của tôi' },
     { href: '/otp', icon: Mail, label: 'Lấy OTP Email' },
     { href: '/kombai', icon: Code, label: 'Kombai Automation' },

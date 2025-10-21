@@ -6,7 +6,7 @@ import { requireAuth, AuthenticatedRequest } from '@/lib/middleware';
 // DELETE: Xóa category guide (admin only)
 async function handleDeleteCategory(
   req: AuthenticatedRequest,
-  { params }: { params: { name: string } }
+  context?: { params: { name: string } }
 ) {
   try {
     const user = req.user!;
@@ -18,10 +18,17 @@ async function handleDeleteCategory(
       );
     }
 
+    if (!context?.params) {
+      return NextResponse.json(
+        { error: 'Missing category name parameter' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
     
     const category = await Category.findOneAndDelete({ 
-      name: params.name.toLowerCase() 
+      name: context.params.name.toLowerCase() 
     });
     
     if (!category) {

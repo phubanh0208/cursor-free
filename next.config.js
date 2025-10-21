@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  // Optimize for Docker production
+  // Optimize for production
   compress: true,
   poweredByHeader: false,
   // Enable SWC minification

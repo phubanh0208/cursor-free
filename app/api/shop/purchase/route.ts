@@ -61,7 +61,7 @@ async function handlePurchase(req: AuthenticatedRequest) {
     
     // Cập nhật token
     token.is_taken = true;
-    token.customerId = user._id;
+    token.customerId = (user._id as any).toString();
     token.purchaseDate = new Date();
     await token.save();
     
