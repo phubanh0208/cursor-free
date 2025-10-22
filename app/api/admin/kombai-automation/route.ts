@@ -182,6 +182,12 @@ async function handlePost(req: AuthenticatedRequest) {
       headless: true,
       // Use system Chromium in Docker (Alpine Linux)
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
     });
 
     // Create new context with no storage (incognito mode)
@@ -190,6 +196,8 @@ async function handlePost(req: AuthenticatedRequest) {
       storageState: undefined, // No stored cookies/sessions
       ignoreHTTPSErrors: true,
       bypassCSP: true,
+      viewport: { width: 1280, height: 720 }, // Set explicit viewport for headless
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     });
     const page = await context.newPage();
     
@@ -251,37 +259,71 @@ async function handlePost(req: AuthenticatedRequest) {
       
       addLog('✅ Signup page loaded (storage cleared)');
 
-      // Step 2: Fill form with wait
+      // Step 2: Fill form with wait and retry
       addLog('✍️  Step 2: Filling credentials...');
       addLog(`   Email: ${email}`);
       addLog(`   Password: ${'*'.repeat(password.length)}`);
       
-      // Wait for form fields to be visible
-      try {
-        await page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 10000 });
-        await page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 10000 });
-        addLog('   ✅ Form fields are visible');
-      } catch (waitError) {
-        addLog('   ⚠️  Form fields not visible yet, checking...');
+      // Wait for page to be fully loaded and interactive
+      addLog('   ⏳ Waiting for page to be fully interactive...');
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000); // Additional wait for JS to render form
+      
+      // Retry logic for finding form fields
+      let emailFieldFound = false;
+      let passwordFieldFound = false;
+      const maxFieldRetries = 5;
+      
+      for (let attempt = 1; attempt <= maxFieldRetries; attempt++) {
+        addLog(`   [Attempt ${attempt}/${maxFieldRetries}] Looking for form fields...`);
+        
+        try {
+          // Try to wait for both fields
+          await Promise.all([
+            page.waitForSelector('input[type="email"]', { state: 'visible', timeout: 5000 }),
+            page.waitForSelector('input[type="password"]', { state: 'visible', timeout: 5000 }),
+          ]);
+          
+          // Double check they exist
+          const emailCount = await page.locator('input[type="email"]').count();
+          const passwordCount = await page.locator('input[type="password"]').count();
+          
+          if (emailCount > 0 && passwordCount > 0) {
+            emailFieldFound = true;
+            passwordFieldFound = true;
+            addLog(`   ✅ Found ${emailCount} email field(s) and ${passwordCount} password field(s)`);
+            break;
+          }
+        } catch (e) {
+          addLog(`   ⚠️  Fields not found yet, waiting...`);
+        }
+        
+        if (attempt < maxFieldRetries) {
+          await page.waitForTimeout(2000); // Wait 2s before retry
+        }
       }
       
-      // Check if email field exists
-      const emailField = await page.locator('input[type="email"]').count();
-      const passwordField = await page.locator('input[type="password"]').count();
-      addLog(`   Found ${emailField} email field(s)`);
-      addLog(`   Found ${passwordField} password field(s)`);
-      
-      if (emailField === 0 || passwordField === 0) {
-        addLog('❌ ERROR: Email or password field not found!');
+      if (!emailFieldFound || !passwordFieldFound) {
+        addLog('❌ ERROR: Email or password field not found after retries!');
         const screenshot2 = await page.screenshot({ fullPage: true, type: 'png' });
         const screenshot2Url = await saveScreenshot(screenshot2, '2-error-no-fields');
         addLog(`   → Error screenshot saved: ${screenshot2Url}`);
-        throw new Error('Signup form fields not found on page');
+        
+        // Log page content for debugging
+        const pageContent = await page.content();
+        addLog(`   → Page URL: ${page.url()}`);
+        addLog(`   → Page has ${pageContent.length} characters`);
+        
+        throw new Error('Signup form fields not found on page after retries');
       }
       
       // Fill fields
+      addLog('   ✍️  Filling email field...');
       await page.fill('input[type="email"]', email);
       await page.waitForTimeout(500); // Small delay between fields
+      
+      addLog('   ✍️  Filling password field...');
       await page.fill('input[type="password"]', password);
       
       // Take screenshot after filling
