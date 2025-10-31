@@ -207,16 +207,49 @@ async function handlePost(req: AuthenticatedRequest) {
     addLog('   → Using fresh browser context (no cookies/cache/sessions)');
 
     try {
-      // Step 1: Navigate to signup
+      // Step 1: Navigate to signup with retry
       addLog('📄 Step 1: Navigating to signup page...');
       addLog(`   URL: ${signupUrl}`);
-      await page.goto(signupUrl);
-      await page.waitForLoadState('networkidle');
+      
+      let pageLoaded = false;
+      const maxNavigationRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxNavigationRetries; attempt++) {
+        try {
+          addLog(`   [Attempt ${attempt}/${maxNavigationRetries}] Navigating...`);
+          
+          await page.goto(signupUrl, {
+            timeout: 60000,
+            waitUntil: 'domcontentloaded'
+          });
+          
+          await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
+          await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {
+            addLog('   ⚠️  networkidle timeout, continuing anyway...');
+          });
+          
+          pageLoaded = true;
+          addLog('   ✅ Page navigation successful');
+          break;
+        } catch (error: any) {
+          addLog(`   ⚠️  Attempt ${attempt} failed: ${error.message.substring(0, 100)}`);
+          if (attempt < maxNavigationRetries) {
+            addLog(`   ⏳ Retrying in 3s...`);
+            await page.waitForTimeout(3000);
+          }
+        }
+      }
+      
+      if (!pageLoaded) {
+        throw new Error('Failed to load signup page after 3 attempts');
+      }
       
       // Clear localStorage and sessionStorage to ensure fresh signup
       await page.evaluate(() => {
         localStorage.clear();
         sessionStorage.clear();
+      }).catch(() => {
+        addLog('   ⚠️  Could not clear storage, continuing...');
       });
       
       // Log current URL after navigation
@@ -236,25 +269,50 @@ async function handlePost(req: AuthenticatedRequest) {
       if (!currentUrl.includes('signup') && !currentUrl.includes('login')) {
         addLog('⚠️  Already logged in, attempting logout...');
         
+        let loggedOut = false;
+        
         // Try to find and click logout button
         try {
-          const logoutButton = await page.locator('button:has-text("Logout"), a:has-text("Logout"), button:has-text("Log out"), a:has-text("Log out")').first();
-          if (await logoutButton.isVisible({ timeout: 2000 })) {
+          const logoutButton = page.locator('button:has-text("Logout"), a:has-text("Logout"), button:has-text("Log out"), a:has-text("Log out")').first();
+          const isVisible = await logoutButton.isVisible({ timeout: 3000 }).catch(() => false);
+          
+          if (isVisible) {
             await logoutButton.click();
-            await page.waitForLoadState('networkidle');
-            addLog('✅ Logged out successfully');
+            await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
+            await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+            addLog('   ✅ Logged out successfully');
+            loggedOut = true;
           }
         } catch (logoutError) {
-          addLog('⚠️  Could not find logout button, clearing cookies and reloading...');
+          addLog('   ⚠️  Could not find logout button');
         }
         
-        // Clear everything again and reload signup page
+        if (!loggedOut) {
+          addLog('   ⚠️  Clearing cookies and reloading...');
+        }
+        
+        // Clear everything again and reload signup page with retry
         await context.clearCookies();
         await page.evaluate(() => {
           localStorage.clear();
           sessionStorage.clear();
-        });
-        await page.goto(signupUrl, { waitUntil: 'networkidle' });
+        }).catch(() => {});
+        
+        // Retry reload
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            await page.goto(signupUrl, { 
+              timeout: 60000, 
+              waitUntil: 'domcontentloaded' 
+            });
+            await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+            addLog('   ✅ Reloaded signup page');
+            break;
+          } catch (reloadError: any) {
+            if (attempt === 2) throw reloadError;
+            await page.waitForTimeout(2000);
+          }
+        }
       }
       
       addLog('✅ Signup page loaded (storage cleared)');
@@ -333,44 +391,71 @@ async function handlePost(req: AuthenticatedRequest) {
       
       addLog('✅ Credentials filled');
 
-      // Step 3: Submit with wait
+      // Step 3: Submit with retry
       addLog('📤 Step 3: Submitting form...');
       
-      // Wait for submit button to be visible and enabled
-      try {
-        await page.waitForSelector('button:has-text("Sign up with email")', { 
-          state: 'visible', 
-          timeout: 10000 
-        });
-        addLog('   ✅ Submit button is visible');
-      } catch (waitError) {
-        addLog('   ⚠️  Submit button not visible yet');
+      let formSubmitted = false;
+      const maxSubmitRetries = 5;
+      
+      for (let attempt = 1; attempt <= maxSubmitRetries; attempt++) {
+        try {
+          addLog(`   [Attempt ${attempt}/${maxSubmitRetries}] Looking for submit button...`);
+          
+          // Wait for submit button to be visible and enabled
+          await page.waitForSelector('button:has-text("Sign up with email")', { 
+            state: 'visible', 
+            timeout: 5000 
+          });
+          
+          const submitButton = page.locator('button:has-text("Sign up with email")').first();
+          const isVisible = await submitButton.isVisible({ timeout: 2000 }).catch(() => false);
+          const isEnabled = await submitButton.isEnabled({ timeout: 2000 }).catch(() => false);
+          
+          if (isVisible && isEnabled) {
+            addLog('   ✅ Submit button found and enabled');
+            
+            // Click submit button
+            await submitButton.click();
+            
+            // Wait for navigation/response
+            await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
+            await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {
+              addLog('   ⚠️  networkidle timeout after submit, continuing...');
+            });
+            await page.waitForTimeout(2000); // Extra stability wait
+            
+            formSubmitted = true;
+            
+            // Log URL after submit
+            const urlAfterSubmit = page.url();
+            addLog(`   URL after submit: ${urlAfterSubmit}`);
+            
+            // Take screenshot after submit
+            const screenshot5 = await page.screenshot({ fullPage: false, type: 'png' });
+            const screenshot5Url = await saveScreenshot(screenshot5, '4-after-submit');
+            addLog(`   → Screenshot saved: ${screenshot5Url}`);
+            
+            break;
+          } else {
+            addLog(`   ⚠️  Button not ready (visible: ${isVisible}, enabled: ${isEnabled})`);
+          }
+        } catch (error: any) {
+          addLog(`   ⚠️  Attempt ${attempt} failed: ${error.message.substring(0, 100)}`);
+        }
+        
+        if (attempt < maxSubmitRetries && !formSubmitted) {
+          addLog(`   ⏳ Retrying in 2s...`);
+          await page.waitForTimeout(2000);
+        }
       }
       
-      // Check if submit button exists
-      const submitButton = await page.locator('button:has-text("Sign up with email")').count();
-      addLog(`   Found ${submitButton} submit button(s)`);
-      
-      if (submitButton === 0) {
-        addLog('❌ ERROR: Submit button not found!');
+      if (!formSubmitted) {
+        addLog('❌ ERROR: Could not submit form after retries!');
         const screenshot4 = await page.screenshot({ fullPage: true, type: 'png' });
         const screenshot4Url = await saveScreenshot(screenshot4, '4-error-no-submit');
         addLog(`   → Error screenshot saved: ${screenshot4Url}`);
-        throw new Error('Submit button not found on page');
+        throw new Error('Submit button not found or not clickable after retries');
       }
-      
-      await page.click('button:has-text("Sign up with email")');
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000); // Extra wait after submit
-      
-      // Log URL after submit
-      const urlAfterSubmit = page.url();
-      addLog(`   URL after submit: ${urlAfterSubmit}`);
-      
-      // Take screenshot after submit
-      const screenshot5 = await page.screenshot({ fullPage: false, type: 'png' });
-      const screenshot5Url = await saveScreenshot(screenshot5, '4-after-submit');
-      addLog(`   → Screenshot saved: ${screenshot5Url}`);
       
       addLog('✅ Form submitted');
 
@@ -398,20 +483,57 @@ async function handlePost(req: AuthenticatedRequest) {
       }
       addLog(`✅ Link extracted: ${confirmLink.substring(0, 60)}...`);
 
-      // Step 7: Visit confirmation
+      // Step 7: Visit confirmation with retry
       addLog('🔗 Step 7: Visiting confirmation link...');
-      await page.goto(confirmLink);
-      await page.waitForLoadState('networkidle');
+      let confirmationVisited = false;
+      const maxConfirmRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxConfirmRetries; attempt++) {
+        try {
+          addLog(`   [Attempt ${attempt}/${maxConfirmRetries}] Navigating to confirmation link...`);
+          await page.goto(confirmLink, { 
+            timeout: 60000,
+            waitUntil: 'domcontentloaded' 
+          });
+          await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
+          await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {
+            addLog('   ⚠️  networkidle timeout, continuing anyway...');
+          });
+          confirmationVisited = true;
+          addLog('   ✅ Confirmation link visited successfully');
+          break;
+        } catch (error: any) {
+          addLog(`   ⚠️  Attempt ${attempt} failed: ${error.message.substring(0, 100)}`);
+          if (attempt < maxConfirmRetries) {
+            addLog(`   ⏳ Retrying in 2s...`);
+            await page.waitForTimeout(2000);
+          }
+        }
+      }
+      
+      if (!confirmationVisited) {
+        throw new Error('Failed to visit confirmation link after 3 attempts');
+      }
+      
       addLog('✅ Confirmation link visited');
 
-      // Step 8: Wait for redirect
+      // Step 8: Wait for redirect and ensure page is stable
       addLog('⏳ Step 8: Waiting for redirect...');
-      await page.waitForTimeout(5000);
+      await page.waitForTimeout(3000);
+      
+      // Wait for any ongoing navigation to complete
+      try {
+        await page.waitForLoadState('load', { timeout: 10000 });
+        await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
+      } catch (e) {
+        addLog('   ⚠️  Page load timeout, but continuing...');
+      }
+      
       addLog('✅ Page redirected');
 
       // Step 9: Extract auth link with retry
       addLog('🎯 Step 9: Extracting auth callback link...');
-      addLog('   → Will retry up to 10 times with 2s delay');
+      addLog('   → Will retry up to 10 times with 1-2s delay');
       
       let authCallbackLink: string | null = null;
       const maxLinkRetries = 10;
@@ -419,33 +541,56 @@ async function handlePost(req: AuthenticatedRequest) {
       for (let attempt = 1; attempt <= maxLinkRetries; attempt++) {
         addLog(`   [Attempt ${attempt}/${maxLinkRetries}] Looking for auth link...`);
         
-        // Wait for page to be fully loaded
-        await page.waitForLoadState('networkidle');
-        
-        // Try to find the link
-        authCallbackLink = await page.evaluate((ideType: string) => {
-          const selector = ideType === 'cursor' 
+        try {
+          // Wait for page to be fully loaded with multiple states
+          await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
+          await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
+          await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+          
+          // Additional wait for JS to render
+          await page.waitForTimeout(1000);
+          
+          // Use locator instead of evaluate to avoid context destruction
+          const selector = ide === 'cursor' 
             ? 'a[href*="cursor://kombai.kombai/auth-callback"]'
             : 'a[href*="vscode://kombai.kombai/auth-callback"]';
-          const link = document.querySelector(selector) as HTMLAnchorElement;
-          return link ? link.href : null;
-        }, ide);
-        
-        if (authCallbackLink) {
-          addLog(`   ✅ Found auth link on attempt ${attempt}`);
-          break;
+          
+          const linkElement = page.locator(selector).first();
+          
+          // Check if link exists and is visible
+          const count = await linkElement.count();
+          if (count > 0) {
+            const isVisible = await linkElement.isVisible({ timeout: 2000 }).catch(() => false);
+            if (isVisible) {
+              authCallbackLink = await linkElement.getAttribute('href');
+              if (authCallbackLink) {
+                addLog(`   ✅ Found auth link on attempt ${attempt}`);
+                break;
+              }
+            }
+          }
+          
+          addLog(`   ⏳ Link not visible yet (found ${count} element(s))...`);
+        } catch (error: any) {
+          addLog(`   ⚠️  Error on attempt ${attempt}: ${error.message.substring(0, 100)}`);
         }
         
-        // Take screenshot of current state
+        // Take screenshot of current state every 3 attempts
         if (attempt % 3 === 0) {
-          const debugScreenshot = await page.screenshot({ fullPage: false, type: 'png' });
-          const debugUrl = await saveScreenshot(debugScreenshot, `debug-attempt-${attempt}`);
-          addLog(`   → Debug screenshot: ${debugUrl}`);
+          try {
+            const debugScreenshot = await page.screenshot({ fullPage: false, type: 'png' });
+            const debugUrl = await saveScreenshot(debugScreenshot, `debug-attempt-${attempt}`);
+            addLog(`   → Debug screenshot: ${debugUrl}`);
+          } catch (screenshotError) {
+            addLog(`   ⚠️  Could not take screenshot`);
+          }
         }
         
         if (attempt < maxLinkRetries) {
-          addLog(`   ⏳ Link not found, waiting 2s before retry...`);
-          await page.waitForTimeout(2000);
+          // Random delay 1-2s to avoid rate limiting
+          const delay = 1000 + Math.random() * 1000;
+          addLog(`   ⏳ Waiting ${(delay/1000).toFixed(1)}s before retry...`);
+          await page.waitForTimeout(delay);
         }
       }
 
